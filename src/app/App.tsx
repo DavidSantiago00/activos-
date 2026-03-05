@@ -1,10 +1,13 @@
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './components/Login';
+import { Register } from './components/Register';
 import { Dashboard } from './components/Dashboard';
 import { Toaster } from './components/ui/sonner';
+import { useState } from 'react';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
+  const [showRegister, setShowRegister] = useState(false);
 
   if (isLoading) {
     return (
@@ -17,7 +20,15 @@ function AppContent() {
     );
   }
 
-  return user ? <Dashboard /> : <Login />;
+  if (user) {
+    return <Dashboard />;
+  }
+
+  return showRegister ? (
+    <Register onSwitchToLogin={() => setShowRegister(false)} />
+  ) : (
+    <Login onSwitchToRegister={() => setShowRegister(true)} />
+  );
 }
 
 function App() {

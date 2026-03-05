@@ -13,7 +13,11 @@ import {
 import { Lock, Mail, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
 
-export function Login() {
+interface LoginProps {
+  onSwitchToRegister: () => void;
+}
+
+export function Login({ onSwitchToRegister }: LoginProps) {
   const { login } = useAuth();
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
@@ -105,16 +109,17 @@ export function Login() {
                 : "Iniciar Sesión"}
             </Button>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-              <p className="text-sm text-blue-900 font-medium mb-2">
-                Credenciales de prueba:
-              </p>
-              <p className="text-sm text-blue-700">
-                Correo: admin@activos.com
-              </p>
-              <p className="text-sm text-blue-700">
-                Contraseña: icg082010
-              </p>
+            <div className="text-center text-sm">
+              <span className="text-gray-600">
+                ¿No tienes cuenta?{" "}
+                <button
+                  type="button"
+                  onClick={onSwitchToRegister}
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  Regístrate aquí
+                </button>
+              </span>
             </div>
           </form>
         </CardContent>
