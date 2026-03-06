@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useActivos } from '../hooks/useActivos';
+import { useMantenimientos } from '../hooks/useMantenimientos';
+import { useMovimientos } from '../hooks/useMovimientos';
+import { useUsuarios } from '../hooks/useUsuarios';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -10,23 +14,30 @@ import {
   Users, 
   LogOut, 
   MapPin,
-  FileText,
-  Settings
+  Loader,
 } from 'lucide-react';
 import { ActivosTab } from './tabs/ActivosTab';
 import { MantenimientosTab } from './tabs/MantenimientosTab';
 import { MovimientosTab } from './tabs/MovimientosTab';
 import { UsuariosTab } from './tabs/UsuariosTab';
-import { mockActivos, mockMantenimientos, mockMovimientos, mockUsuarios } from '../data/mockData';
 
 export function Dashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('activos');
+  const { activos, loading: loadingActivos } = useActivos();
+  const { mantenimientos, loading: loadingMantenimientos } = useMantenimientos();
+  const { movimientos, loading: loadingMovimientos } = useMovimientos();
+  const { usuarios, loading: loadingUsuarios } = useUsuarios();
 
-  const activosCount = mockActivos.length;
-  const mantenimientosActivos = mockMantenimientos.filter(m => m.en_mantenimiento).length;
-  const movimientosRecientes = mockMovimientos.length;
-  const usuariosCount = mockUsuarios.length;
+  const loadingStats =
+    loadingActivos || loadingMantenimientos || loadingMovimientos || loadingUsuarios;
+
+  const activosCount = activos.length;
+  const mantenimientosActivos = mantenimientos.filter(
+    (m) => m.estado.toLowerCase() !== 'completado',
+  ).length;
+  const movimientosRecientes = movimientos.length;
+  const usuariosCount = usuarios.length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -66,7 +77,7 @@ export function Dashboard() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activosCount}</div>
+              <div className="text-2xl font-bold">{loadingStats ? <Loader className="h-5 w-5 animate-spin" /> : activosCount}</div>
               <p className="text-xs text-muted-foreground">Registrados en el sistema</p>
             </CardContent>
           </Card>
@@ -77,7 +88,7 @@ export function Dashboard() {
               <Wrench className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mantenimientosActivos}</div>
+              <div className="text-2xl font-bold">{loadingStats ? <Loader className="h-5 w-5 animate-spin" /> : mantenimientosActivos}</div>
               <p className="text-xs text-muted-foreground">Activos en servicio</p>
             </CardContent>
           </Card>
@@ -88,7 +99,7 @@ export function Dashboard() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{movimientosRecientes}</div>
+              <div className="text-2xl font-bold">{loadingStats ? <Loader className="h-5 w-5 animate-spin" /> : movimientosRecientes}</div>
               <p className="text-xs text-muted-foreground">Este mes</p>
             </CardContent>
           </Card>
@@ -99,7 +110,7 @@ export function Dashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{usuariosCount}</div>
+              <div className="text-2xl font-bold">{loadingStats ? <Loader className="h-5 w-5 animate-spin" /> : usuariosCount}</div>
               <p className="text-xs text-muted-foreground">Usuarios activos</p>
             </CardContent>
           </Card>

@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Plus, Search, Eye, Pencil, Trash2, Loader } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Loader } from 'lucide-react';
 import { ActivoForm } from '../forms/ActivoForm';
 import { toast } from 'sonner';
 
@@ -19,7 +19,8 @@ export function ActivosTab() {
     (activo) =>
       activo.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       activo.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activo.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
+      activo.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      activo.estado.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreate = async (activoData: Partial<Activo>) => {
@@ -60,10 +61,6 @@ export function ActivosTab() {
 
   const handleEdit = (activo: Activo) => {
     setEditingActivo(activo);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES');
   };
 
   if (error) {
@@ -111,7 +108,7 @@ export function ActivosTab() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Ubicación</TableHead>
-                  <TableHead>Fecha Alta</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -130,11 +127,15 @@ export function ActivosTab() {
                     <TableCell>{activo.tipo_activo?.nombre || 'N/A'}</TableCell>
                     <TableCell>
                       <div>
-                        <div className="text-sm">{activo.ubicacion?.ubicacion || 'N/A'}</div>
+                        <div className="text-sm">{activo.ubicacion?.nombre || 'N/A'}</div>
                         <div className="text-xs text-gray-500">{activo.ubicacion?.direccion}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{formatDate(activo.fecha)}</TableCell>
+                    <TableCell>
+                      <Badge variant={activo.estado === 'activo' ? 'default' : 'secondary'}>
+                        {activo.estado}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 

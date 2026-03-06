@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MovimientoActivo } from '../../types/database';
-import { mockActivos, mockUsuarios } from '../../data/mockData';
+import { useCatalogos } from '../../hooks/useCatalogos';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -23,34 +23,32 @@ const tiposMovimiento = [
 ];
 
 export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFormProps) {
+  const { activos, usuarios, ubicaciones } = useCatalogos();
+
   const [formData, setFormData] = useState({
     tipo_de_movimiento: movimiento?.tipo_de_movimiento || '',
     fecha: movimiento?.fecha || new Date().toISOString().split('T')[0],
-    id_usuario: movimiento?.id_usuario?.toString() || '',
-    id_activo: movimiento?.id_activo?.toString() || '',
-    descripcion_destino: movimiento?.descripcion_destino || '',
+    usuario_id: movimiento?.usuario_id?.toString() || movimiento?.usuario?.id_usuario?.toString() || '',
+    activo_id: movimiento?.activo_id?.toString() || movimiento?.activo?.id_activo?.toString() || '',
+    descripcion: movimiento?.descripcion || '',
+    ubicacion_origen_id:
+      movimiento?.ubicacion_origen_id?.toString() || movimiento?.ubicacion_origen?.id_ubicacion?.toString() || '',
+    ubicacion_destino_id:
+      movimiento?.ubicacion_destino_id?.toString() || movimiento?.ubicacion_destino?.id_ubicacion?.toString() || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const selectedActivo = mockActivos.find(
-      (a) => a.id_activo.toString() === formData.id_activo
-    );
-    
-    const selectedUsuario = mockUsuarios.find(
-      (u) => u.id_usuario.toString() === formData.id_usuario
-    );
 
     const movimientoData: Partial<MovimientoActivo> = {
       ...movimiento,
       tipo_de_movimiento: formData.tipo_de_movimiento,
       fecha: formData.fecha,
-      id_usuario: parseInt(formData.id_usuario),
-      id_activo: parseInt(formData.id_activo),
-      descripcion_destino: formData.descripcion_destino,
-      activo: selectedActivo,
-      usuario: selectedUsuario,
+      descripcion: formData.descripcion,
+      usuario_id: Number(formData.usuario_id),
+      activo_id: Number(formData.activo_id),
+      ubicacion_origen_id: Number(formData.ubicacion_origen_id),
+      ubicacion_destino_id: Number(formData.ubicacion_destino_id),
     };
 
     onSubmit(movimientoData);
@@ -110,14 +108,14 @@ export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFor
             <div className="space-y-2">
               <Label htmlFor="id_activo">Activo *</Label>
               <Select
-                value={formData.id_activo}
-                onValueChange={(value) => handleChange('id_activo', value)}
+                value={formData.activo_id}
+                onValueChange={(value) => handleChange('activo_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar activo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockActivos.map((activo) => (
+                  {activos.map((activo) => (
                     <SelectItem key={activo.id_activo} value={activo.id_activo.toString()}>
                       {activo.codigo} - {activo.nombre}
                     </SelectItem>
@@ -130,14 +128,14 @@ export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFor
             <div className="space-y-2">
               <Label htmlFor="id_usuario">Usuario Responsable *</Label>
               <Select
-                value={formData.id_usuario}
-                onValueChange={(value) => handleChange('id_usuario', value)}
+                value={formData.usuario_id}
+                onValueChange={(value) => handleChange('usuario_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar usuario" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockUsuarios.map((usuario) => (
+                  {usuarios.map((usuario) => (
                     <SelectItem key={usuario.id_usuario} value={usuario.id_usuario.toString()}>
                       {usuario.nombre}
                     </SelectItem>
@@ -146,15 +144,55 @@ export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFor
               </Select>
             </div>
 
-            {/* Descripción de Destino */}
+            {/* Ubicación origen */}
+            <div className="space-y-2">
+              <Label htmlFor="ubicacion_origen_id">Ubicación Origen *</Label>
+              <Select
+                value={formData.ubicacion_origen_id}
+                onValueChange={(value) => handleChange('ubicacion_origen_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar origen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ubicaciones.map((ubicacion) => (
+                    <SelectItem key={ubicacion.id_ubicacion} value={ubicacion.id_ubicacion.toString()}>
+                      {ubicacion.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ubicación destino */}
+            <div className="space-y-2">
+              <Label htmlFor="ubicacion_destino_id">Ubicación Destino *</Label>
+              <Select
+                value={formData.ubicacion_destino_id}
+                onValueChange={(value) => handleChange('ubicacion_destino_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar destino" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ubicaciones.map((ubicacion) => (
+                    <SelectItem key={ubicacion.id_ubicacion} value={ubicacion.id_ubicacion.toString()}>
+                      {ubicacion.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Descripción */}
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="descripcion_destino">Descripción de Destino *</Label>
+              <Label htmlFor="descripcion">Descripción *</Label>
               <Textarea
-                id="descripcion_destino"
-                value={formData.descripcion_destino}
-                onChange={(e) => handleChange('descripcion_destino', e.target.value)}
+                id="descripcion"
+                value={formData.descripcion}
+                onChange={(e) => handleChange('descripcion', e.target.value)}
                 required
-                placeholder="Describa el destino o detalles del movimiento (ubicación, área, etc.)"
+                placeholder="Describe el motivo o detalle del movimiento"
                 rows={3}
               />
             </div>

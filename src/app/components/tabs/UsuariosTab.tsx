@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { mockUsuarios } from '../../data/mockData';
+import { useUsuarios } from '../../hooks/useUsuarios';
 import { Usuario } from '../../types/database';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Plus, Search, Eye, Pencil, Trash2, Mail, Phone } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Mail, Phone, Loader } from 'lucide-react';
 import { UsuarioForm } from '../forms/UsuarioForm';
 import { toast } from 'sonner';
 
 export function UsuariosTab() {
-  const [usuarios, setUsuarios] = useState<Usuario[]>(mockUsuarios);
+  const { usuarios, loading, error, createUsuario, updateUsuario, deleteUsuario } = useUsuarios();
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<Usuario | undefined>();
@@ -19,48 +19,56 @@ export function UsuariosTab() {
     (usuario) =>
       usuario.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       usuario.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      usuario.id.toLowerCase().includes(searchTerm.toLowerCase())
+      usuario.rol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreate = (usuarioData: Partial<Usuario>) => {
-    const newUsuario: Usuario = {
-      id_usuario: usuarios.length + 1,
-      nombre: usuarioData.nombre!,
-      correo: usuarioData.correo!,
-      telefono: usuarioData.telefono,
-      id: usuarioData.id!,
-      id_descripcion_origen: usuarioData.id_descripcion_origen,
-    };
-    
-    setUsuarios([...usuarios, newUsuario]);
-    setShowForm(false);
-    toast.success('Usuario creado exitosamente');
+  const handleCreate = async (usuarioData: Partial<Usuario>) => {
+    try {
+      await createUsuario(usuarioData);
+      setShowForm(false);
+      toast.success('Usuario creado exitosamente');
+    } catch (err) {
+      toast.error('Error al crear usuario');
+      console.error(err);
+    }
   };
 
-  const handleUpdate = (usuarioData: Partial<Usuario>) => {
+  const handleUpdate = async (usuarioData: Partial<Usuario>) => {
     if (!editingUsuario) return;
 
-    setUsuarios(
-      usuarios.map((usuario) =>
-        usuario.id_usuario === editingUsuario.id_usuario
-          ? { ...usuario, ...usuarioData, id_usuario: editingUsuario.id_usuario }
-          : usuario
-      )
-    );
-    setEditingUsuario(undefined);
-    toast.success('Usuario actualizado exitosamente');
+    try {
+      await updateUsuario(editingUsuario.id_usuario, usuarioData);
+      setEditingUsuario(undefined);
+      toast.success('Usuario actualizado exitosamente');
+    } catch (err) {
+      toast.error('Error al actualizar usuario');
+      console.error(err);
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      setUsuarios(usuarios.filter((usuario) => usuario.id_usuario !== id));
-      toast.success('Usuario eliminado exitosamente');
+      try {
+        await deleteUsuario(id);
+        toast.success('Usuario eliminado exitosamente');
+      } catch (err) {
+        toast.error('Error al eliminar usuario');
+        console.error(err);
+      }
     }
   };
 
   const handleEdit = (usuario: Usuario) => {
     setEditingUsuario(usuario);
   };
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -72,75 +80,77 @@ export function UsuariosTab() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
+            disabled={loading}
           />
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => setShowForm(true)} disabled={loading}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Usuario
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID Usuario</TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Correo</TableHead>
-              <TableHead>Teléfono</TableHead>
-              <TableHead>Código</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredUsuarios.map((usuario) => (
-              <TableRow key={usuario.id_usuario}>
-                <TableCell>#{usuario.id_usuario}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{usuario.nombre}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm">{usuario.correo}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {usuario.telefono ? (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm">{usuario.telefono}</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">N/A</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{usuario.id}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleEdit(usuario)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDelete(usuario.id_usuario)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                </TableCell>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader className="h-8 w-8 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600">Cargando usuarios...</span>
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID Usuario</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Correo</TableHead>
+                <TableHead>Teléfono</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filteredUsuarios.map((usuario) => (
+                <TableRow key={usuario.id_usuario}>
+                  <TableCell>#{usuario.id_usuario}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{usuario.nombre}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm">{usuario.correo}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {usuario.telefono ? (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm">{usuario.telefono}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">N/A</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{usuario.rol}</Badge>
+                  </TableCell>
+                  <TableCell>{usuario.estado || 'activo'}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(usuario)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(usuario.id_usuario)}>
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {filteredUsuarios.length === 0 && (
         <div className="text-center py-12">

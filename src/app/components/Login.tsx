@@ -68,13 +68,13 @@ export function Login({ onSwitchToRegister }: LoginProps) {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="correo">Correo Electrónico</Label>
+              <Label htmlFor="correo">Correo o Usuario</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="correo"
-                  type="email"
-                  placeholder="admin@activos.com"
+                  type="text"
+                  placeholder="admin@activos.com o admin"
                   value={correo}
                   onChange={(e) => setCorreo(e.target.value)}
                   required

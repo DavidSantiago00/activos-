@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Activo } from '../../types/database';
-import { mockUbicaciones, mockTiposActivo } from '../../data/mockData';
+import { useCatalogos } from '../../hooks/useCatalogos';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -15,37 +15,28 @@ interface ActivoFormProps {
 }
 
 export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
+  const { ubicaciones, tiposActivos } = useCatalogos();
+
   const [formData, setFormData] = useState({
     nombre: activo?.nombre || '',
     descripcion: activo?.descripcion || '',
     codigo: activo?.codigo || '',
-    fecha: activo?.fecha || new Date().toISOString().split('T')[0],
-    id_ubicacion: activo?.id_ubicacion?.toString() || '',
-    direccion: activo?.direccion?.toString() || '',
-    tipo_activo: activo?.tipo_activo?.id_tipo?.toString() || '',
+    estado: activo?.estado || 'activo',
+    ubicacion_id: activo?.ubicacion_id?.toString() || activo?.ubicacion?.id_ubicacion?.toString() || '',
+    tipo_activo_id: activo?.tipo_activo_id?.toString() || activo?.tipo_activo?.id_tipo?.toString() || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const selectedUbicacion = mockUbicaciones.find(
-      (u, index) => index.toString() === formData.id_ubicacion
-    );
-    
-    const selectedTipo = mockTiposActivo.find(
-      (t) => t.id_tipo.toString() === formData.tipo_activo
-    );
 
     const activoData: Partial<Activo> = {
       ...activo,
       nombre: formData.nombre,
       descripcion: formData.descripcion,
       codigo: formData.codigo,
-      fecha: formData.fecha,
-      id_ubicacion: parseInt(formData.id_ubicacion) || undefined,
-      direccion: parseInt(formData.direccion) || undefined,
-      ubicacion: selectedUbicacion,
-      tipo_activo: selectedTipo,
+      estado: formData.estado,
+      ubicacion_id: Number(formData.ubicacion_id),
+      tipo_activo_id: Number(formData.tipo_activo_id),
     };
 
     onSubmit(activoData);
@@ -81,18 +72,6 @@ export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
               />
             </div>
 
-            {/* Fecha */}
-            <div className="space-y-2">
-              <Label htmlFor="fecha">Fecha de Alta *</Label>
-              <Input
-                id="fecha"
-                type="date"
-                value={formData.fecha}
-                onChange={(e) => handleChange('fecha', e.target.value)}
-                required
-              />
-            </div>
-
             {/* Nombre */}
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="nombre">Nombre del Activo *</Label>
@@ -121,14 +100,14 @@ export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
             <div className="space-y-2">
               <Label htmlFor="tipo_activo">Tipo de Activo *</Label>
               <Select
-                value={formData.tipo_activo}
-                onValueChange={(value) => handleChange('tipo_activo', value)}
+                value={formData.tipo_activo_id}
+                onValueChange={(value) => handleChange('tipo_activo_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockTiposActivo.map((tipo) => (
+                  {tiposActivos.map((tipo) => (
                     <SelectItem key={tipo.id_tipo} value={tipo.id_tipo.toString()}>
                       {tipo.nombre}
                     </SelectItem>
@@ -141,32 +120,39 @@ export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
             <div className="space-y-2">
               <Label htmlFor="id_ubicacion">Ubicación *</Label>
               <Select
-                value={formData.id_ubicacion}
-                onValueChange={(value) => handleChange('id_ubicacion', value)}
+                value={formData.ubicacion_id}
+                onValueChange={(value) => handleChange('ubicacion_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar ubicación" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockUbicaciones.map((ubicacion, index) => (
-                    <SelectItem key={index} value={index.toString()}>
-                      {ubicacion.ubicacion} - {ubicacion.direccion}
+                  {ubicaciones.map((ubicacion) => (
+                    <SelectItem key={ubicacion.id_ubicacion} value={ubicacion.id_ubicacion.toString()}>
+                      {ubicacion.nombre} - {ubicacion.direccion}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Dirección (número o referencia) */}
+            {/* Estado */}
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="direccion">Dirección/Número</Label>
-              <Input
-                id="direccion"
-                type="number"
-                value={formData.direccion}
-                onChange={(e) => handleChange('direccion', e.target.value)}
-                placeholder="Número de dirección o referencia"
-              />
+              <Label htmlFor="estado">Estado *</Label>
+              <Select
+                value={formData.estado}
+                onValueChange={(value) => handleChange('estado', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="mantenimiento">En mantenimiento</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                  <SelectItem value="baja">Baja</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

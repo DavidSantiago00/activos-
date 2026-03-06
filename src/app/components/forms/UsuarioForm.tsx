@@ -3,6 +3,7 @@ import { Usuario } from '../../types/database';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { X } from 'lucide-react';
 
 interface UsuarioFormProps {
@@ -16,8 +17,9 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
     nombre: usuario?.nombre || '',
     correo: usuario?.correo || '',
     telefono: usuario?.telefono || '',
-    id: usuario?.id || '',
-    id_descripcion_origen: usuario?.id_descripcion_origen?.toString() || '',
+    contraseña: '',
+    rol: usuario?.rol || 'usuario',
+    estado: usuario?.estado || 'activo',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -27,11 +29,10 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
       ...usuario,
       nombre: formData.nombre,
       correo: formData.correo,
-      telefono: formData.telefono || undefined,
-      id: formData.id,
-      id_descripcion_origen: formData.id_descripcion_origen 
-        ? parseInt(formData.id_descripcion_origen) 
-        : undefined,
+      telefono: formData.telefono,
+      rol: formData.rol,
+      estado: formData.estado,
+      contraseña: formData.contraseña || undefined,
     };
 
     onSubmit(usuarioData);
@@ -67,18 +68,6 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
               />
             </div>
 
-            {/* ID / Código de Usuario */}
-            <div className="space-y-2">
-              <Label htmlFor="id">Código de Usuario *</Label>
-              <Input
-                id="id"
-                value={formData.id}
-                onChange={(e) => handleChange('id', e.target.value)}
-                required
-                placeholder="USR001"
-              />
-            </div>
-
             {/* Correo */}
             <div className="space-y-2">
               <Label htmlFor="correo">Correo Electrónico *</Label>
@@ -89,6 +78,21 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
                 onChange={(e) => handleChange('correo', e.target.value)}
                 required
                 placeholder="usuario@empresa.com"
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="contraseña">
+                Contraseña {usuario ? '(opcional)' : '*'}
+              </Label>
+              <Input
+                id="contraseña"
+                type="password"
+                value={formData.contraseña}
+                onChange={(e) => handleChange('contraseña', e.target.value)}
+                required={!usuario}
+                placeholder="Mínimo 6 caracteres"
+                minLength={6}
               />
             </div>
 
@@ -104,19 +108,31 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
               />
             </div>
 
-            {/* ID Descripción Origen */}
             <div className="space-y-2">
-              <Label htmlFor="id_descripcion_origen">ID Descripción Origen</Label>
-              <Input
-                id="id_descripcion_origen"
-                type="number"
-                value={formData.id_descripcion_origen}
-                onChange={(e) => handleChange('id_descripcion_origen', e.target.value)}
-                placeholder="Opcional"
-              />
-              <p className="text-xs text-gray-500">
-                Referencia a la descripción de origen del usuario
-              </p>
+              <Label htmlFor="rol">Rol *</Label>
+              <Select value={formData.rol} onValueChange={(value) => handleChange('rol', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="administrador">Administrador</SelectItem>
+                  <SelectItem value="tecnico">Técnico</SelectItem>
+                  <SelectItem value="usuario">Usuario</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado *</Label>
+              <Select value={formData.estado} onValueChange={(value) => handleChange('estado', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

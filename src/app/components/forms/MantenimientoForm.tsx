@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Mantenimiento } from '../../types/database';
-import { mockActivos, mockUsuarios } from '../../data/mockData';
+import { useCatalogos } from '../../hooks/useCatalogos';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Switch } from '../ui/switch';
 import { X } from 'lucide-react';
 
 interface MantenimientoFormProps {
@@ -16,40 +15,37 @@ interface MantenimientoFormProps {
 }
 
 export function MantenimientoForm({ mantenimiento, onSubmit, onCancel }: MantenimientoFormProps) {
+  const { activos, usuarios, tiposMantenimiento } = useCatalogos();
+
   const [formData, setFormData] = useState({
     fecha: mantenimiento?.fecha || new Date().toISOString().split('T')[0],
     descripcion: mantenimiento?.descripcion || '',
-    id_usuario: mantenimiento?.id_usuario?.toString() || '',
-    id_activo: mantenimiento?.id_activo?.toString() || '',
-    en_mantenimiento: mantenimiento?.en_mantenimiento || false,
+    estado: mantenimiento?.estado || 'pendiente',
+    usuario_id: mantenimiento?.usuario_id?.toString() || mantenimiento?.usuario?.id_usuario?.toString() || '',
+    activo_id: mantenimiento?.activo_id?.toString() || mantenimiento?.activo?.id_activo?.toString() || '',
+    tipo_mantenimiento_id:
+      mantenimiento?.tipo_mantenimiento_id?.toString() ||
+      mantenimiento?.tipo_mantenimiento?.id_tipo_mantenimiento?.toString() ||
+      '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const selectedActivo = mockActivos.find(
-      (a) => a.id_activo.toString() === formData.id_activo
-    );
-    
-    const selectedUsuario = mockUsuarios.find(
-      (u) => u.id_usuario.toString() === formData.id_usuario
-    );
 
     const mantenimientoData: Partial<Mantenimiento> = {
       ...mantenimiento,
       fecha: formData.fecha,
       descripcion: formData.descripcion,
-      id_usuario: parseInt(formData.id_usuario),
-      id_activo: parseInt(formData.id_activo),
-      en_mantenimiento: formData.en_mantenimiento,
-      activo: selectedActivo,
-      usuario: selectedUsuario,
+      estado: formData.estado,
+      usuario_id: Number(formData.usuario_id),
+      activo_id: Number(formData.activo_id),
+      tipo_mantenimiento_id: Number(formData.tipo_mantenimiento_id),
     };
 
     onSubmit(mantenimientoData);
   };
 
-  const handleChange = (field: string, value: string | boolean) => {
+  const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -83,14 +79,14 @@ export function MantenimientoForm({ mantenimiento, onSubmit, onCancel }: Manteni
             <div className="space-y-2">
               <Label htmlFor="id_activo">Activo *</Label>
               <Select
-                value={formData.id_activo}
-                onValueChange={(value) => handleChange('id_activo', value)}
+                value={formData.activo_id}
+                onValueChange={(value) => handleChange('activo_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar activo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockActivos.map((activo) => (
+                  {activos.map((activo) => (
                     <SelectItem key={activo.id_activo} value={activo.id_activo.toString()}>
                       {activo.codigo} - {activo.nombre}
                     </SelectItem>
@@ -103,18 +99,59 @@ export function MantenimientoForm({ mantenimiento, onSubmit, onCancel }: Manteni
             <div className="space-y-2">
               <Label htmlFor="id_usuario">Usuario Responsable *</Label>
               <Select
-                value={formData.id_usuario}
-                onValueChange={(value) => handleChange('id_usuario', value)}
+                value={formData.usuario_id}
+                onValueChange={(value) => handleChange('usuario_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar usuario" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockUsuarios.map((usuario) => (
+                  {usuarios.map((usuario) => (
                     <SelectItem key={usuario.id_usuario} value={usuario.id_usuario.toString()}>
                       {usuario.nombre}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tipo de Mantenimiento */}
+            <div className="space-y-2">
+              <Label htmlFor="tipo_mantenimiento_id">Tipo de Mantenimiento *</Label>
+              <Select
+                value={formData.tipo_mantenimiento_id}
+                onValueChange={(value) => handleChange('tipo_mantenimiento_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposMantenimiento.map((tipo) => (
+                    <SelectItem
+                      key={tipo.id_tipo_mantenimiento}
+                      value={tipo.id_tipo_mantenimiento.toString()}
+                    >
+                      {tipo.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Estado */}
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado *</Label>
+              <Select
+                value={formData.estado}
+                onValueChange={(value) => handleChange('estado', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                  <SelectItem value="en_proceso">En proceso</SelectItem>
+                  <SelectItem value="completado">Completado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -132,22 +169,6 @@ export function MantenimientoForm({ mantenimiento, onSubmit, onCancel }: Manteni
               />
             </div>
 
-            {/* Estado del Mantenimiento */}
-            <div className="space-y-2 md:col-span-2">
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <Label htmlFor="en_mantenimiento">En Mantenimiento Activo</Label>
-                  <p className="text-sm text-gray-500">
-                    Indica si el activo está actualmente en proceso de mantenimiento
-                  </p>
-                </div>
-                <Switch
-                  id="en_mantenimiento"
-                  checked={formData.en_mantenimiento}
-                  onCheckedChange={(checked) => handleChange('en_mantenimiento', checked)}
-                />
-              </div>
-            </div>
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t">

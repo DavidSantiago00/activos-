@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Activo } from '../types/database';
+import { Activo, PaginatedResponse } from '../types/database';
 import { API_ENDPOINTS, get, post, put, deleteRequest } from '../config/api';
+
+function parseListResponse<T>(data: PaginatedResponse<T> | T[]): T[] {
+  return Array.isArray(data) ? data : data.results;
+}
 
 /**
  * Hook para obtener lista de activos
@@ -17,8 +21,8 @@ export function useActivos() {
   const fetchActivos = async () => {
     try {
       setLoading(true);
-      const data = await get<any>(API_ENDPOINTS.activos);
-      setActivos(data.results || data);
+      const data = await get<PaginatedResponse<Activo> | Activo[]>(API_ENDPOINTS.activos);
+      setActivos(parseListResponse(data));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching activos');
@@ -31,7 +35,7 @@ export function useActivos() {
   const createActivo = async (activo: Partial<Activo>) => {
     try {
       const newActivo = await post<Activo>(API_ENDPOINTS.activos, activo);
-      setActivos([...activos, newActivo]);
+      setActivos((prev) => [...prev, newActivo]);
       return newActivo;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error creating activo');
@@ -45,7 +49,7 @@ export function useActivos() {
         `${API_ENDPOINTS.activos}${id}/`,
         activo
       );
-      setActivos(activos.map(a => a.id_activo === id ? updated : a));
+      setActivos((prev) => prev.map((a) => (a.id_activo === id ? updated : a)));
       return updated;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error updating activo');
@@ -56,7 +60,7 @@ export function useActivos() {
   const deleteActivo = async (id: number) => {
     try {
       await deleteRequest(`${API_ENDPOINTS.activos}${id}/`);
-      setActivos(activos.filter(a => a.id_activo !== id));
+      setActivos((prev) => prev.filter((a) => a.id_activo !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error deleting activo');
       throw err;

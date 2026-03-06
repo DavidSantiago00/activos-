@@ -1,16 +1,23 @@
 import { useState } from 'react';
-import { mockMovimientos } from '../../data/mockData';
+import { useMovimientos } from '../../hooks/useMovimientos';
 import { MovimientoActivo } from '../../types/database';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Loader } from 'lucide-react';
 import { MovimientoForm } from '../forms/MovimientoForm';
 import { toast } from 'sonner';
 
 export function MovimientosTab() {
-  const [movimientos, setMovimientos] = useState<MovimientoActivo[]>(mockMovimientos);
+  const {
+    movimientos,
+    loading,
+    error,
+    createMovimiento,
+    updateMovimiento,
+    deleteMovimiento,
+  } = useMovimientos();
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingMovimiento, setEditingMovimiento] = useState<MovimientoActivo | undefined>();
@@ -18,46 +25,44 @@ export function MovimientosTab() {
   const filteredMovimientos = movimientos.filter(
     (mov) =>
       mov.tipo_de_movimiento.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.activo?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.usuario?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.descripcion_destino?.toLowerCase().includes(searchTerm.toLowerCase())
+      mov.activo?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mov.usuario?.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mov.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCreate = (movimientoData: Partial<MovimientoActivo>) => {
-    const newMovimiento: MovimientoActivo = {
-      id_movimiento: movimientos.length + 1,
-      tipo_de_movimiento: movimientoData.tipo_de_movimiento!,
-      fecha: movimientoData.fecha!,
-      id_usuario: movimientoData.id_usuario!,
-      id_activo: movimientoData.id_activo!,
-      descripcion_destino: movimientoData.descripcion_destino,
-      activo: movimientoData.activo,
-      usuario: movimientoData.usuario,
-    };
-    
-    setMovimientos([...movimientos, newMovimiento]);
-    setShowForm(false);
-    toast.success('Movimiento registrado exitosamente');
+  const handleCreate = async (movimientoData: Partial<MovimientoActivo>) => {
+    try {
+      await createMovimiento(movimientoData);
+      setShowForm(false);
+      toast.success('Movimiento registrado exitosamente');
+    } catch (err) {
+      toast.error('Error al crear movimiento');
+      console.error(err);
+    }
   };
 
-  const handleUpdate = (movimientoData: Partial<MovimientoActivo>) => {
+  const handleUpdate = async (movimientoData: Partial<MovimientoActivo>) => {
     if (!editingMovimiento) return;
 
-    setMovimientos(
-      movimientos.map((mov) =>
-        mov.id_movimiento === editingMovimiento.id_movimiento
-          ? { ...mov, ...movimientoData, id_movimiento: editingMovimiento.id_movimiento }
-          : mov
-      )
-    );
-    setEditingMovimiento(undefined);
-    toast.success('Movimiento actualizado exitosamente');
+    try {
+      await updateMovimiento(editingMovimiento.id_movimiento, movimientoData);
+      setEditingMovimiento(undefined);
+      toast.success('Movimiento actualizado exitosamente');
+    } catch (err) {
+      toast.error('Error al actualizar movimiento');
+      console.error(err);
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm('¿Estás seguro de que deseas eliminar este movimiento?')) {
-      setMovimientos(movimientos.filter((mov) => mov.id_movimiento !== id));
-      toast.success('Movimiento eliminado exitosamente');
+      try {
+        await deleteMovimiento(id);
+        toast.success('Movimiento eliminado exitosamente');
+      } catch (err) {
+        toast.error('Error al eliminar movimiento');
+        console.error(err);
+      }
     }
   };
 
@@ -82,6 +87,14 @@ export function MovimientosTab() {
     }
   };
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">Error: {error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -92,68 +105,68 @@ export function MovimientosTab() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
+            disabled={loading}
           />
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => setShowForm(true)} disabled={loading}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Movimiento
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Activo</TableHead>
-              <TableHead>Destino</TableHead>
-              <TableHead>Usuario</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredMovimientos.map((mov) => (
-              <TableRow key={mov.id_movimiento}>
-                <TableCell>#{mov.id_movimiento}</TableCell>
-                <TableCell>
-                  <Badge variant={getTipoColor(mov.tipo_de_movimiento)}>
-                    {mov.tipo_de_movimiento}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{mov.activo?.nombre}</div>
-                    <div className="text-sm text-gray-500">{mov.activo?.codigo}</div>
-                  </div>
-                </TableCell>
-                <TableCell>{mov.descripcion_destino || 'N/A'}</TableCell>
-                <TableCell>{mov.usuario?.nombre}</TableCell>
-                <TableCell>{formatDate(mov.fecha)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleEdit(mov)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDelete(mov.id_movimiento)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                </TableCell>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader className="h-8 w-8 animate-spin text-blue-600" />
+          <span className="ml-2 text-gray-600">Cargando movimientos...</span>
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Activo</TableHead>
+                <TableHead>Origen</TableHead>
+                <TableHead>Destino</TableHead>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filteredMovimientos.map((mov) => (
+                <TableRow key={mov.id_movimiento}>
+                  <TableCell>#{mov.id_movimiento}</TableCell>
+                  <TableCell>
+                    <Badge variant={getTipoColor(mov.tipo_de_movimiento)}>{mov.tipo_de_movimiento}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{mov.activo?.nombre}</div>
+                      <div className="text-sm text-gray-500">{mov.activo?.codigo}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{mov.ubicacion_origen?.nombre || 'N/A'}</TableCell>
+                  <TableCell>{mov.ubicacion_destino?.nombre || 'N/A'}</TableCell>
+                  <TableCell>{mov.usuario?.nombre}</TableCell>
+                  <TableCell>{formatDate(mov.fecha)}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(mov)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(mov.id_movimiento)}>
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {filteredMovimientos.length === 0 && (
         <div className="text-center py-12">

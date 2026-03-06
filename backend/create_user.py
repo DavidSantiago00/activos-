@@ -35,6 +35,9 @@ usuario, created = Usuario.objects.get_or_create(
     defaults={
         'nombre': 'David Santiago Torres',
         'telefono': '+1234567890',
+        'contraseña': 'icg082010',
+        'rol': 'administrador',
+        'estado': 'activo',
     }
 )
 

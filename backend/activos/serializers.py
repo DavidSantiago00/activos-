@@ -8,8 +8,19 @@ from .models import (
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id_usuario', 'nombre', 'correo', 'telefono', 'rol']
-        extra_kwargs = {'contraseña': {'write_only': True}}
+        fields = ['id_usuario', 'nombre', 'correo', 'telefono', 'rol', 'estado', 'contraseña']
+        extra_kwargs = {
+            'contraseña': {
+                'write_only': True,
+                'required': False,
+                'allow_blank': True,
+            }
+        }
+
+    def create(self, validated_data):
+        if 'contraseña' not in validated_data:
+            validated_data['contraseña'] = ''
+        return super().create(validated_data)
 
 
 class AreaSerializer(serializers.ModelSerializer):
@@ -69,6 +80,21 @@ class MantenimientoSerializer(serializers.ModelSerializer):
     activo = ActivoSerializer(read_only=True)
     usuario = UsuarioSerializer(read_only=True)
     tipo_mantenimiento = TipoMantenimientoSerializer(read_only=True)
+    activo_id = serializers.PrimaryKeyRelatedField(
+        queryset=Activo.objects.all(),
+        source='activo',
+        write_only=True,
+    )
+    usuario_id = serializers.PrimaryKeyRelatedField(
+        queryset=Usuario.objects.all(),
+        source='usuario',
+        write_only=True,
+    )
+    tipo_mantenimiento_id = serializers.PrimaryKeyRelatedField(
+        queryset=TipoMantenimiento.objects.all(),
+        source='tipo_mantenimiento',
+        write_only=True,
+    )
 
     class Meta:
         model = Mantenimiento
@@ -84,6 +110,26 @@ class MovimientoActivoSerializer(serializers.ModelSerializer):
     usuario = UsuarioSerializer(read_only=True)
     ubicacion_origen = UbicacionSerializer(read_only=True)
     ubicacion_destino = UbicacionSerializer(read_only=True)
+    activo_id = serializers.PrimaryKeyRelatedField(
+        queryset=Activo.objects.all(),
+        source='activo',
+        write_only=True,
+    )
+    usuario_id = serializers.PrimaryKeyRelatedField(
+        queryset=Usuario.objects.all(),
+        source='usuario',
+        write_only=True,
+    )
+    ubicacion_origen_id = serializers.PrimaryKeyRelatedField(
+        queryset=Ubicacion.objects.all(),
+        source='ubicacion_origen',
+        write_only=True,
+    )
+    ubicacion_destino_id = serializers.PrimaryKeyRelatedField(
+        queryset=Ubicacion.objects.all(),
+        source='ubicacion_destino',
+        write_only=True,
+    )
 
     class Meta:
         model = MovimientoActivo

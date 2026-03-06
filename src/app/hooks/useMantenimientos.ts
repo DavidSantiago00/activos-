@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Mantenimiento } from '../types/database';
+import { Mantenimiento, PaginatedResponse } from '../types/database';
 import { API_ENDPOINTS, get, post, put, deleteRequest } from '../config/api';
+
+function parseListResponse<T>(data: PaginatedResponse<T> | T[]): T[] {
+  return Array.isArray(data) ? data : data.results;
+}
 
 /**
  * Hook para obtener lista de mantenimientos
@@ -17,8 +21,10 @@ export function useMantenimientos() {
   const fetchMantenimientos = async () => {
     try {
       setLoading(true);
-      const data = await get<any>(API_ENDPOINTS.mantenimientos);
-      setMantenimientos(data.results || data);
+      const data = await get<PaginatedResponse<Mantenimiento> | Mantenimiento[]>(
+        API_ENDPOINTS.mantenimientos,
+      );
+      setMantenimientos(parseListResponse(data));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error fetching mantenimientos');
@@ -34,7 +40,7 @@ export function useMantenimientos() {
         API_ENDPOINTS.mantenimientos,
         mantenimiento
       );
-      setMantenimientos([...mantenimientos, newMantenimiento]);
+      setMantenimientos((prev) => [...prev, newMantenimiento]);
       return newMantenimiento;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error creating mantenimiento');
@@ -51,9 +57,7 @@ export function useMantenimientos() {
         `${API_ENDPOINTS.mantenimientos}${id}/`,
         mantenimiento
       );
-      setMantenimientos(
-        mantenimientos.map(m => m.id_mantenimiento === id ? updated : m)
-      );
+      setMantenimientos((prev) => prev.map((m) => (m.id_mantenimiento === id ? updated : m)));
       return updated;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error updating mantenimiento');
@@ -64,9 +68,7 @@ export function useMantenimientos() {
   const deleteMantenimiento = async (id: number) => {
     try {
       await deleteRequest(`${API_ENDPOINTS.mantenimientos}${id}/`);
-      setMantenimientos(
-        mantenimientos.filter(m => m.id_mantenimiento !== id)
-      );
+      setMantenimientos((prev) => prev.filter((m) => m.id_mantenimiento !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error deleting mantenimiento');
       throw err;

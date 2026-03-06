@@ -64,10 +64,16 @@ export async function fetchAPI<T>(
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+      const errorBody = await response.text();
+      throw new Error(`API error ${response.status}: ${errorBody || response.statusText}`);
     }
 
-    return response.json();
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    const text = await response.text();
+    return (text ? JSON.parse(text) : {}) as T;
   } catch (error) {
     console.error('Fetch error:', error);
     throw error;
