@@ -5,10 +5,25 @@ from .models import (
 )
 
 
+ACTIVO_ESTADO_TO_DB = {
+    'activo': 'Activo',
+    'mantenimiento': 'En mantenimiento',
+    'en mantenimiento': 'En mantenimiento',
+    'baja': 'Dado de baja',
+    'dado de baja': 'Dado de baja',
+}
+
+ACTIVO_ESTADO_FROM_DB = {
+    'activo': 'activo',
+    'en mantenimiento': 'mantenimiento',
+    'dado de baja': 'baja',
+}
+
+
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id_usuario', 'nombre', 'correo', 'telefono', 'rol', 'estado', 'contraseña']
+        fields = ['id_usuario', 'nombre', 'correo', 'telefono', 'rol', 'contraseña']
         extra_kwargs = {
             'contraseña': {
                 'write_only': True,
@@ -61,13 +76,33 @@ class ActivoSerializer(serializers.ModelSerializer):
         source='ubicacion', 
         write_only=True
     )
+    fecha_adquisicion = serializers.DateField(required=False)
+    valor_adquisicion = serializers.DecimalField(max_digits=18, decimal_places=2, required=False)
 
     class Meta:
         model = Activo
         fields = [
-            'id_activo', 'nombre', 'descripcion', 'codigo', 'estado',
+            'id_activo', 'nombre', 'descripcion', 'codigo',
+            'fecha_adquisicion', 'valor_adquisicion', 'estado',
             'tipo_activo', 'tipo_activo_id', 'ubicacion', 'ubicacion_id'
         ]
+
+    def validate_estado(self, value):
+        normalized_value = value.strip().lower()
+        db_value = ACTIVO_ESTADO_TO_DB.get(normalized_value)
+
+        if db_value is None:
+            raise serializers.ValidationError(
+                'Estado invalido. Use activo, mantenimiento o baja.'
+            )
+
+        return db_value
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        normalized_value = str(instance.estado).strip().lower()
+        data['estado'] = ACTIVO_ESTADO_FROM_DB.get(normalized_value, normalized_value)
+        return data
 
 
 class TipoMantenimientoSerializer(serializers.ModelSerializer):
@@ -77,6 +112,7 @@ class TipoMantenimientoSerializer(serializers.ModelSerializer):
 
 
 class MantenimientoSerializer(serializers.ModelSerializer):
+    estado = serializers.CharField(required=False, allow_blank=True, write_only=True)
     activo = ActivoSerializer(read_only=True)
     usuario = UsuarioSerializer(read_only=True)
     tipo_mantenimiento = TipoMantenimientoSerializer(read_only=True)
@@ -95,14 +131,30 @@ class MantenimientoSerializer(serializers.ModelSerializer):
         source='tipo_mantenimiento',
         write_only=True,
     )
+    costo = serializers.DecimalField(max_digits=18, decimal_places=2, required=False)
 
     class Meta:
         model = Mantenimiento
         fields = [
-            'id_mantenimiento', 'fecha', 'descripcion', 'estado',
+            'id_mantenimiento', 'fecha', 'descripcion', 'estado', 'costo',
             'activo', 'usuario', 'tipo_mantenimiento',
             'activo_id', 'usuario_id', 'tipo_mantenimiento_id'
         ]
+
+    def create(self, validated_data):
+        # Frontend still sends estado, but SQL table does not have that column.
+        validated_data.pop('estado', None)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop('estado', None)
+        return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Keep frontend contract stable.
+        data['estado'] = 'completado' if (instance.costo or 0) > 0 else 'pendiente'
+        return data
 
 
 class MovimientoActivoSerializer(serializers.ModelSerializer):

@@ -1,14 +1,14 @@
 from django.db import models
+from datetime import date
 
 
 class Usuario(models.Model):
     id_usuario = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
     correo = models.EmailField(unique=True)
-    contraseña = models.CharField(max_length=255)
+    contraseña = models.CharField(max_length=255, db_column='password')
     telefono = models.CharField(max_length=20)
     rol = models.CharField(max_length=50)
-    estado = models.CharField(max_length=50, default='activo')
 
     def __str__(self):
         return self.nombre
@@ -32,8 +32,7 @@ class Ubicacion(models.Model):
     id_ubicacion = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
     direccion = models.CharField(max_length=200)
-    area = models.ForeignKey(Area, on_delete=models.CASCADE)
-    estado = models.CharField(max_length=50, default='activo')
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, db_column='area_id')
 
     def __str__(self):
         return self.nombre
@@ -60,9 +59,11 @@ class Activo(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField()
     codigo = models.CharField(max_length=50, unique=True)
+    fecha_adquisicion = models.DateField(default=date.today, db_column='fecha_adquisicion')
+    valor_adquisicion = models.DecimalField(max_digits=18, decimal_places=2, default=0, db_column='valor_adquisicion')
     estado = models.CharField(max_length=50)
-    tipo_activo = models.ForeignKey(TipoActivo, on_delete=models.CASCADE)
-    ubicacion = models.ForeignKey(Ubicacion, on_delete=models.CASCADE)
+    tipo_activo = models.ForeignKey(TipoActivo, on_delete=models.CASCADE, db_column='id_tipo')
+    ubicacion = models.ForeignKey(Ubicacion, on_delete=models.CASCADE, db_column='id_ubicacion')
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"
@@ -90,10 +91,10 @@ class Mantenimiento(models.Model):
     id_mantenimiento = models.AutoField(primary_key=True)
     fecha = models.DateField()
     descripcion = models.TextField()
-    estado = models.CharField(max_length=50)
-    activo = models.ForeignKey(Activo, on_delete=models.CASCADE)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    tipo_mantenimiento = models.ForeignKey(TipoMantenimiento, on_delete=models.CASCADE)
+    costo = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True, default=0, db_column='costo')
+    activo = models.ForeignKey(Activo, on_delete=models.CASCADE, db_column='id_activo')
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, db_column='id_usuario')
+    tipo_mantenimiento = models.ForeignKey(TipoMantenimiento, on_delete=models.CASCADE, db_column='tipo_mantenimiento_id')
 
     def __str__(self):
         return f"Mantenimiento {self.id_mantenimiento} - {self.activo.nombre}"
@@ -106,11 +107,11 @@ class MovimientoActivo(models.Model):
     id_movimiento = models.AutoField(primary_key=True)
     fecha = models.DateField()
     descripcion = models.TextField()
-    tipo_de_movimiento = models.CharField(max_length=50)
-    activo = models.ForeignKey(Activo, on_delete=models.CASCADE)
-    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
-    ubicacion_origen = models.ForeignKey(Ubicacion, related_name="movimientos_salida", on_delete=models.CASCADE)
-    ubicacion_destino = models.ForeignKey(Ubicacion, related_name="movimientos_entrada", on_delete=models.CASCADE)
+    tipo_de_movimiento = models.CharField(max_length=50, db_column='tipo_movimiento')
+    activo = models.ForeignKey(Activo, on_delete=models.CASCADE, db_column='id_activo')
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, db_column='id_usuario')
+    ubicacion_origen = models.ForeignKey(Ubicacion, related_name="movimientos_salida", on_delete=models.CASCADE, db_column='id_ubicacion_origen')
+    ubicacion_destino = models.ForeignKey(Ubicacion, related_name="movimientos_entrada", on_delete=models.CASCADE, db_column='id_ubicacion_destino')
 
     def __str__(self):
         return f"Movimiento {self.id_movimiento} - {self.activo.nombre}"

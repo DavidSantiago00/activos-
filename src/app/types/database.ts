@@ -70,6 +70,20 @@ export interface Mantenimiento {
   tipo_mantenimiento_id?: number;
 }
 
+export interface NotificacionAdmin {
+  id: number;
+  fecha: string;
+  resultado: string;
+  tecnico: string;
+  mensaje: string;
+  activo: {
+    id_activo: number;
+    codigo: string;
+    nombre: string;
+    estado: string;
+  };
+}
+
 export interface MovimientoActivo {
   id_movimiento: number;
   fecha: string;
@@ -88,6 +102,7 @@ export interface MovimientoActivo {
 export interface LoginCredentials {
   correo: string;
   password: string;
+  rol?: string;
 }
 
 export interface AuthUser {

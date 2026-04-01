@@ -22,6 +22,7 @@ interface RegisterData {
   correo: string;
   password: string;
   telefono?: string;
+  rol?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(
@@ -57,6 +58,7 @@ export function AuthProvider({
         body: JSON.stringify({
           correo: credentials.correo,
           password: credentials.password,
+          rol: credentials.rol,
         })
       });
       
@@ -73,6 +75,7 @@ export function AuthProvider({
           nombre: data.user.nombre,
           correo: data.user.correo,
           telefono: data.user.telefono || '',
+          rol: data.user.rol || 'usuario',
           token: data.access_token,
         };
         
@@ -101,6 +104,7 @@ export function AuthProvider({
           correo: data.correo,
           password: data.password,
           telefono: data.telefono || '',
+          rol: 'tecnico',
         })
       });
       
@@ -117,6 +121,7 @@ export function AuthProvider({
           nombre: responseData.user.nombre,
           correo: responseData.user.correo,
           telefono: responseData.user.telefono || '',
+          rol: responseData.user.rol || 'tecnico',
           token: responseData.access_token,
         };
         

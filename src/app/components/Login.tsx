@@ -21,6 +21,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   const { login } = useAuth();
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
+  const [rol, setRol] = useState("tecnico");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,7 +31,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
     setIsLoading(true);
 
     try {
-      await login({ correo, password });
+      await login({ correo, password, rol });
     } catch (err) {
       setError(
         err instanceof Error
@@ -81,6 +82,19 @@ export function Login({ onSwitchToRegister }: LoginProps) {
                   className="pl-10"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="rol">Rol</Label>
+              <select
+                id="rol"
+                value={rol}
+                onChange={(e) => setRol(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="tecnico">Tecnico</option>
+                <option value="administrador">Administrador</option>
+              </select>
             </div>
 
             <div className="space-y-2">

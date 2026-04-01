@@ -65,6 +65,23 @@ export function useMantenimientos() {
     }
   };
 
+  const resolverMantenimiento = async (
+    id: number,
+    payload: { resultado: 'arreglado' | 'baja'; comentario?: string }
+  ) => {
+    try {
+      const response = await post<{ message: string }>(
+        `${API_ENDPOINTS.mantenimientos}${id}/resolver/`,
+        payload
+      );
+      await fetchMantenimientos();
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error resolviendo mantenimiento');
+      throw err;
+    }
+  };
+
   const deleteMantenimiento = async (id: number) => {
     try {
       await deleteRequest(`${API_ENDPOINTS.mantenimientos}${id}/`);
@@ -82,6 +99,7 @@ export function useMantenimientos() {
     fetchMantenimientos,
     createMantenimiento,
     updateMantenimiento,
+    resolverMantenimiento,
     deleteMantenimiento,
   };
 }

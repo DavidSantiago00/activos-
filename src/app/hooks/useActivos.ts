@@ -57,6 +57,23 @@ export function useActivos() {
     }
   };
 
+  const resolverEstadoActivo = async (
+    id: number,
+    payload: { resultado: 'arreglado' | 'baja'; comentario?: string }
+  ) => {
+    try {
+      const response = await post<{ message: string }>(
+        `${API_ENDPOINTS.activos}${id}/resolver-estado/`,
+        payload
+      );
+      await fetchActivos();
+      return response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error resolviendo estado del activo');
+      throw err;
+    }
+  };
+
   const deleteActivo = async (id: number) => {
     try {
       await deleteRequest(`${API_ENDPOINTS.activos}${id}/`);
@@ -74,6 +91,7 @@ export function useActivos() {
     fetchActivos,
     createActivo,
     updateActivo,
+    resolverEstadoActivo,
     deleteActivo,
   };
 }

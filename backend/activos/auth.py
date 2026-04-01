@@ -17,7 +17,8 @@ class RegisterView(APIView):
         "nombre": "David Santiago",
         "correo": "davidsantiagotorresrestrepo@gmail.com",
         "password": "icg082010",
-        "telefono": "+1234567890"
+        "telefono": "+1234567890",
+        "rol": "tecnico"
     }
     """
     
@@ -66,8 +67,7 @@ class RegisterView(APIView):
                     correo=correo,
                     telefono=telefono,
                     contraseña=password,
-                    rol='usuario',
-                    estado='activo',
+                    rol='tecnico',
                 )
 
             # Generar JWT tokens
@@ -95,18 +95,48 @@ class LoginView(APIView):
     """
     Vista de login para autenticación con JWT.
     POST /api/auth/login/
-    Body: { "correo": "email@example.com", "password": "password" }
+    Body: {
+        "correo": "email@example.com",
+        "password": "password",
+        "rol": "tecnico | administrador"
+    }
     """
     
     permission_classes = []
 
+    @staticmethod
+    def _normalize_rol(rol):
+        value = (rol or '').strip().lower()
+        if value in ['tecnico', 'tecnico/a', 'técnico']:
+            return 'tecnico'
+        if value in ['admin', 'administrador']:
+            return 'administrador'
+        if value in ['usuario', 'user']:
+            return 'tecnico'
+        return value
+
+    @staticmethod
+    def _canonical_rol(user, rol_bd):
+        if user.is_staff or user.is_superuser:
+            return 'administrador'
+        if rol_bd in ['tecnico', 'administrador']:
+            return rol_bd
+        return 'tecnico'
+
     def post(self, request):
         correo = (request.data.get('correo') or '').strip().lower()
         password = request.data.get('password')
+        rol_solicitado = self._normalize_rol(request.data.get('rol'))
 
         if not correo or not password:
             return Response(
                 {'error': 'Correo y contraseña requeridos'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if rol_solicitado and rol_solicitado not in ['tecnico', 'administrador']:
+            return Response(
+                {'error': 'Rol inválido. Debe ser tecnico o administrador'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -153,6 +183,7 @@ class LoginView(APIView):
         access_token = str(refresh.access_token)
 
         # Obtener datos del usuario desde modelo Activos
+        usuario = None
         try:
             usuario = Usuario.objects.get(correo=correo)
             usuario_data = UsuarioSerializer(usuario).data
@@ -162,9 +193,23 @@ class LoginView(APIView):
                 'nombre': user.first_name or 'Usuario',
                 'correo': user.email,
                 'telefono': '',
-                'rol': 'usuario',
-                'estado': 'activo',
+                'rol': 'administrador' if (user.is_staff or user.is_superuser) else 'tecnico',
             }
+
+        rol_usuario = self._normalize_rol(usuario_data.get('rol'))
+        rol_canonico = self._canonical_rol(user, rol_usuario)
+
+        if usuario and (usuario.rol or '').strip().lower() != rol_canonico:
+            usuario.rol = rol_canonico
+            usuario.save(update_fields=['rol'])
+
+        usuario_data['rol'] = rol_canonico
+
+        if rol_solicitado and rol_canonico != rol_solicitado:
+            return Response(
+                {'error': 'El rol seleccionado no corresponde a este usuario'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         return Response({
             'access_token': access_token,
