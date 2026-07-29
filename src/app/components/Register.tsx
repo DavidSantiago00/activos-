@@ -19,7 +19,6 @@ interface RegisterProps {
 
 export function Register({ onSwitchToLogin }: RegisterProps) {
   const { register } = useAuth();
-  const rol = "tecnico";
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
@@ -71,7 +70,6 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
         correo,
         password,
         telefono,
-        rol,
       });
     } catch (err) {
       setError(
@@ -139,18 +137,6 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                   className="pl-10"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="rol">Rol</Label>
-              <select
-                id="rol"
-                value={rol}
-                disabled
-                className="w-full rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground"
-              >
-                <option value="tecnico">Tecnico</option>
-              </select>
             </div>
 
             <div className="space-y-2">

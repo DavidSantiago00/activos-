@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
-import { API_ENDPOINTS, getAllPages } from '../config/api';
+import { API_ENDPOINTS, get } from '../config/api';
 import {
   Area,
+  PaginatedResponse,
   TipoActivo,
   TipoMantenimiento,
   Ubicacion,
   Usuario,
   Activo,
 } from '../types/database';
+
+function parseListResponse<T>(data: PaginatedResponse<T> | T[]): T[] {
+  return Array.isArray(data) ? data : data.results;
+}
 
 export function useCatalogos() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -23,20 +28,20 @@ export function useCatalogos() {
     try {
       setLoading(true);
       const [usuariosData, activosData, ubicacionesData, tiposActivosData, tiposMantData, areasData] = await Promise.all([
-        getAllPages<Usuario>(API_ENDPOINTS.usuarios),
-        getAllPages<Activo>(API_ENDPOINTS.activos),
-        getAllPages<Ubicacion>(API_ENDPOINTS.ubicaciones),
-        getAllPages<TipoActivo>(API_ENDPOINTS.tipos_activos),
-        getAllPages<TipoMantenimiento>(API_ENDPOINTS.tipos_mantenimiento),
-        getAllPages<Area>(API_ENDPOINTS.areas),
+        get<PaginatedResponse<Usuario> | Usuario[]>(API_ENDPOINTS.usuarios),
+        get<PaginatedResponse<Activo> | Activo[]>(API_ENDPOINTS.activos),
+        get<PaginatedResponse<Ubicacion> | Ubicacion[]>(API_ENDPOINTS.ubicaciones),
+        get<PaginatedResponse<TipoActivo> | TipoActivo[]>(API_ENDPOINTS.tipos_activos),
+        get<PaginatedResponse<TipoMantenimiento> | TipoMantenimiento[]>(API_ENDPOINTS.tipos_mantenimiento),
+        get<PaginatedResponse<Area> | Area[]>(API_ENDPOINTS.areas),
       ]);
 
-      setUsuarios(usuariosData);
-      setActivos(activosData);
-      setUbicaciones(ubicacionesData);
-      setTiposActivos(tiposActivosData);
-      setTiposMantenimiento(tiposMantData);
-      setAreas(areasData);
+      setUsuarios(parseListResponse(usuariosData));
+      setActivos(parseListResponse(activosData));
+      setUbicaciones(parseListResponse(ubicacionesData));
+      setTiposActivos(parseListResponse(tiposActivosData));
+      setTiposMantenimiento(parseListResponse(tiposMantData));
+      setAreas(parseListResponse(areasData));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error cargando catalogos');

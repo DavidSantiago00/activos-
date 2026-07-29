@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useUsuarios } from '../../hooks/useUsuarios';
 import { Usuario } from '../../types/database';
-import { exportUsuarioIndividualReport, exportUsuariosGroupReport } from '../../utils/pdfReports';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Plus, Search, Pencil, Trash2, Mail, Phone, Loader, FileText } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Mail, Phone, Loader } from 'lucide-react';
 import { UsuarioForm } from '../forms/UsuarioForm';
 import { toast } from 'sonner';
 
@@ -84,20 +83,10 @@ export function UsuariosTab() {
             disabled={loading}
           />
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => exportUsuariosGroupReport(filteredUsuarios)}
-            disabled={loading || filteredUsuarios.length === 0}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Reporte PDF
-          </Button>
-          <Button onClick={() => setShowForm(true)} disabled={loading}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Usuario
-          </Button>
-        </div>
+        <Button onClick={() => setShowForm(true)} disabled={loading}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Usuario
+        </Button>
       </div>
 
       {loading ? (
@@ -148,14 +137,6 @@ export function UsuariosTab() {
                   <TableCell>{usuario.estado || 'activo'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => exportUsuarioIndividualReport(usuario)}
-                        title="Generar reporte individual"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(usuario)}>
                         <Pencil className="h-4 w-4" />
                       </Button>

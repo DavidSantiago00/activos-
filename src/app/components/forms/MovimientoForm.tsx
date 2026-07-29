@@ -24,8 +24,6 @@ const tiposMovimiento = [
 
 export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFormProps) {
   const { activos, usuarios, ubicaciones } = useCatalogos();
-  const [searchOrigen, setSearchOrigen] = useState('');
-  const [searchDestino, setSearchDestino] = useState('');
 
   const [formData, setFormData] = useState({
     tipo_de_movimiento: movimiento?.tipo_de_movimiento || '',
@@ -37,26 +35,6 @@ export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFor
       movimiento?.ubicacion_origen_id?.toString() || movimiento?.ubicacion_origen?.id_ubicacion?.toString() || '',
     ubicacion_destino_id:
       movimiento?.ubicacion_destino_id?.toString() || movimiento?.ubicacion_destino?.id_ubicacion?.toString() || '',
-  });
-
-  const filteredUbicacionesOrigen = ubicaciones.filter((ubicacion) => {
-    const query = searchOrigen.trim().toLowerCase();
-    if (!query) return true;
-
-    return (
-      ubicacion.nombre.toLowerCase().includes(query) ||
-      ubicacion.direccion.toLowerCase().includes(query)
-    );
-  });
-
-  const filteredUbicacionesDestino = ubicaciones.filter((ubicacion) => {
-    const query = searchDestino.trim().toLowerCase();
-    if (!query) return true;
-
-    return (
-      ubicacion.nombre.toLowerCase().includes(query) ||
-      ubicacion.direccion.toLowerCase().includes(query)
-    );
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -177,22 +155,11 @@ export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFor
                   <SelectValue placeholder="Seleccionar origen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <div className="p-2 border-b">
-                    <Input
-                      value={searchOrigen}
-                      onChange={(e) => setSearchOrigen(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      placeholder="Buscar ubicación origen..."
-                    />
-                  </div>
-                  {filteredUbicacionesOrigen.map((ubicacion) => (
+                  {ubicaciones.map((ubicacion) => (
                     <SelectItem key={ubicacion.id_ubicacion} value={ubicacion.id_ubicacion.toString()}>
                       {ubicacion.nombre}
                     </SelectItem>
                   ))}
-                  {filteredUbicacionesOrigen.length === 0 && (
-                    <div className="px-3 py-2 text-sm text-gray-500">No se encontraron ubicaciones</div>
-                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -208,22 +175,11 @@ export function MovimientoForm({ movimiento, onSubmit, onCancel }: MovimientoFor
                   <SelectValue placeholder="Seleccionar destino" />
                 </SelectTrigger>
                 <SelectContent>
-                  <div className="p-2 border-b">
-                    <Input
-                      value={searchDestino}
-                      onChange={(e) => setSearchDestino(e.target.value)}
-                      onKeyDown={(e) => e.stopPropagation()}
-                      placeholder="Buscar ubicación destino..."
-                    />
-                  </div>
-                  {filteredUbicacionesDestino.map((ubicacion) => (
+                  {ubicaciones.map((ubicacion) => (
                     <SelectItem key={ubicacion.id_ubicacion} value={ubicacion.id_ubicacion.toString()}>
                       {ubicacion.nombre}
                     </SelectItem>
                   ))}
-                  {filteredUbicacionesDestino.length === 0 && (
-                    <div className="px-3 py-2 text-sm text-gray-500">No se encontraron ubicaciones</div>
-                  )}
                 </SelectContent>
               </Select>
             </div>

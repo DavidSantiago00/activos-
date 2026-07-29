@@ -7,7 +7,7 @@ from .models import (
 
 @admin.register(Usuario)
 class UsuarioAdmin(admin.ModelAdmin):
-    list_display = ('id_usuario', 'nombre', 'correo', 'rol')
+    list_display = ('id_usuario', 'nombre', 'correo', 'rol', 'estado')
     search_fields = ('nombre', 'correo')
 
 
@@ -44,9 +44,9 @@ class TipoMantenimientoAdmin(admin.ModelAdmin):
 
 @admin.register(Mantenimiento)
 class MantenimientoAdmin(admin.ModelAdmin):
-    list_display = ('id_mantenimiento', 'fecha', 'activo', 'usuario', 'costo')
+    list_display = ('id_mantenimiento', 'fecha', 'activo', 'usuario', 'estado')
     search_fields = ('activo__nombre', 'usuario__nombre')
-    list_filter = ('fecha', 'tipo_mantenimiento')
+    list_filter = ('fecha', 'estado', 'tipo_mantenimiento')
 
 
 @admin.register(MovimientoActivo)

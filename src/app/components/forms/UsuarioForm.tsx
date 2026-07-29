@@ -19,6 +19,7 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
     telefono: usuario?.telefono || '',
     contraseña: '',
     rol: usuario?.rol || 'usuario',
+    estado: usuario?.estado || 'activo',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,6 +31,7 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
       correo: formData.correo,
       telefono: formData.telefono,
       rol: formData.rol,
+      estado: formData.estado,
       contraseña: formData.contraseña || undefined,
     };
 
@@ -120,7 +122,18 @@ export function UsuarioForm({ usuario, onSubmit, onCancel }: UsuarioFormProps) {
               </Select>
             </div>
 
-            
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado *</Label>
+              <Select value={formData.estado} onValueChange={(value) => handleChange('estado', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-6 border-t">

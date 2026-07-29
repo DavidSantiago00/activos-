@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Activo } from '../../types/database';
 import { useCatalogos } from '../../hooks/useCatalogos';
-import { API_ENDPOINTS, post } from '../../config/api';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -11,18 +10,12 @@ import { X } from 'lucide-react';
 
 interface ActivoFormProps {
   activo?: Activo;
-  onSubmit: (activo: Partial<Activo>) => Promise<void> | void;
+  onSubmit: (activo: Partial<Activo>) => void;
   onCancel: () => void;
 }
 
 export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
-  const { ubicaciones, tiposActivos, areas } = useCatalogos();
-  const isEditing = Boolean(activo);
-  const [ubicacionSearch, setUbicacionSearch] = useState('');
-  const [useNewUbicacion, setUseNewUbicacion] = useState(false);
-  const [nuevaUbicacionNombre, setNuevaUbicacionNombre] = useState('');
-  const [nuevaUbicacionDireccion, setNuevaUbicacionDireccion] = useState('');
-  const [nuevaAreaNombre, setNuevaAreaNombre] = useState('');
+  const { ubicaciones, tiposActivos } = useCatalogos();
 
   const [formData, setFormData] = useState({
     nombre: activo?.nombre || '',
@@ -33,46 +26,8 @@ export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
     tipo_activo_id: activo?.tipo_activo_id?.toString() || activo?.tipo_activo?.id_tipo?.toString() || '',
   });
 
-  const filteredUbicaciones = ubicaciones.filter((ubicacion) => {
-    const query = ubicacionSearch.trim().toLowerCase();
-    if (!query) return true;
-
-    return (
-      ubicacion.nombre.toLowerCase().includes(query) ||
-      ubicacion.direccion.toLowerCase().includes(query)
-    );
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    let ubicacionId = Number(formData.ubicacion_id);
-
-    if (isEditing && useNewUbicacion) {
-      const areaIngresada = nuevaAreaNombre.trim();
-      if (!nuevaUbicacionNombre.trim() || !areaIngresada) {
-        return;
-      }
-
-      let currentAreaId = areas.find(
-        (area) => area.nombre.trim().toLowerCase() === areaIngresada.toLowerCase()
-      )?.id_area;
-
-      if (!currentAreaId) {
-        const createdArea = await post<{ id_area: number; nombre: string }>(API_ENDPOINTS.areas, {
-          nombre: areaIngresada,
-        });
-        currentAreaId = createdArea.id_area;
-      }
-
-      const createdUbicacion = await post<{ id_ubicacion: number }>(API_ENDPOINTS.ubicaciones, {
-        nombre: nuevaUbicacionNombre.trim(),
-        direccion: nuevaUbicacionDireccion.trim(),
-        area_id: Number(currentAreaId),
-      });
-
-      ubicacionId = createdUbicacion.id_ubicacion;
-    }
 
     const activoData: Partial<Activo> = {
       ...activo,
@@ -80,11 +35,11 @@ export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
       descripcion: formData.descripcion,
       codigo: formData.codigo,
       estado: formData.estado,
-      ubicacion_id: ubicacionId,
+      ubicacion_id: Number(formData.ubicacion_id),
       tipo_activo_id: Number(formData.tipo_activo_id),
     };
 
-    await onSubmit(activoData);
+    onSubmit(activoData);
   };
 
   const handleChange = (field: string, value: string) => {
@@ -164,74 +119,21 @@ export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
             {/* Ubicación */}
             <div className="space-y-2">
               <Label htmlFor="id_ubicacion">Ubicación *</Label>
-              {!useNewUbicacion || !isEditing ? (
-                <>
-                  <Select
-                    value={formData.ubicacion_id}
-                    onValueChange={(value) => handleChange('ubicacion_id', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar ubicación" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="p-2 border-b">
-                        <Input
-                          value={ubicacionSearch}
-                          onChange={(e) => setUbicacionSearch(e.target.value)}
-                          onKeyDown={(e) => e.stopPropagation()}
-                          placeholder="Buscar ubicación..."
-                        />
-                      </div>
-                      {filteredUbicaciones.map((ubicacion) => (
-                        <SelectItem key={ubicacion.id_ubicacion} value={ubicacion.id_ubicacion.toString()}>
-                          {ubicacion.nombre} - {ubicacion.direccion}
-                        </SelectItem>
-                      ))}
-                      {filteredUbicaciones.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-gray-500">No se encontraron ubicaciones</div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {isEditing && (
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="h-auto p-0 text-sm"
-                      onClick={() => setUseNewUbicacion(true)}
-                    >
-                      Escribir ubicación nueva
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <div className="space-y-2">
-                  <Input
-                    value={nuevaUbicacionNombre}
-                    onChange={(e) => setNuevaUbicacionNombre(e.target.value)}
-                    placeholder="Nombre de la nueva ubicación"
-                    required
-                  />
-                  <Input
-                    value={nuevaAreaNombre}
-                    onChange={(e) => setNuevaAreaNombre(e.target.value)}
-                    placeholder="Área de la ubicación"
-                    required
-                  />
-                  <Input
-                    value={nuevaUbicacionDireccion}
-                    onChange={(e) => setNuevaUbicacionDireccion(e.target.value)}
-                    placeholder="Dirección de la ubicación"
-                  />
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="h-auto p-0 text-sm"
-                    onClick={() => setUseNewUbicacion(false)}
-                  >
-                    Usar ubicación existente
-                  </Button>
-                </div>
-              )}
+              <Select
+                value={formData.ubicacion_id}
+                onValueChange={(value) => handleChange('ubicacion_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar ubicación" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ubicaciones.map((ubicacion) => (
+                    <SelectItem key={ubicacion.id_ubicacion} value={ubicacion.id_ubicacion.toString()}>
+                      {ubicacion.nombre} - {ubicacion.direccion}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Estado */}
@@ -247,6 +149,7 @@ export function ActivoForm({ activo, onSubmit, onCancel }: ActivoFormProps) {
                 <SelectContent>
                   <SelectItem value="activo">Activo</SelectItem>
                   <SelectItem value="mantenimiento">En mantenimiento</SelectItem>
+                  <SelectItem value="inactivo">Inactivo</SelectItem>
                   <SelectItem value="baja">Baja</SelectItem>
                 </SelectContent>
               </Select>
